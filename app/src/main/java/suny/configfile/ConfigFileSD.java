@@ -1,8 +1,8 @@
 package suny.configfile;
 
-import android.content.Context;
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -13,8 +13,8 @@ import java.util.Properties;
  * Created by suny on 17-4-11.
  */
 
-public class ConfigFile {
-    private static final String TAG = "ConfigFile";
+public class ConfigFileSD {
+    private static final String TAG = "ConfigFileSD";
     private static final String CONFIGVERSION = "0.0.1";
     private static final String CONFIGNAME = "my.properties";
     public static String stringName = "My_String";
@@ -22,36 +22,41 @@ public class ConfigFile {
     public static int intName = 1;
     public static long longName = 1000000000L;
 
-    public static boolean initConfig(Context context) {
+    public static boolean initConfig(String parentPath) {
         Log.i(TAG, "initConfig: init config file");
-        FileInputStream stream;
-        try {
-            stream = context.openFileInput(CONFIGNAME);
-            int ret = loadConfig(stream);
+        String name = parentPath + CONFIGNAME;
+        File file = new File(name);
+        if (file.exists()) {
+            int ret = loadConfig(name);
             if (ret < 0) {
                 return false;
             } else if (ret > 0) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "initConfig: " + e);
+                if (file.delete()) {
+                    return createConfig(name);
+                } else {
+                    Log.e(TAG, "initConfig: delete error: " + name);
                     return false;
                 }
-
-                context.deleteFile(CONFIGNAME);
-                return createConfig(context, CONFIGNAME);
             } else {
                 return true;
             }
-        } catch (FileNotFoundException e) {
-            Log.w(TAG, "initConfig: " + e);
-            return createConfig(context, CONFIGNAME);
+        } else {
+            return createConfig(name);
         }
     }
 
     //load configure file
-    private static int loadConfig(FileInputStream stream) {
+    private static int loadConfig(String fileName) {
         Log.i(TAG, "initConfig: load config file");
+        int result = -1;
+        FileInputStream stream;
+        try {
+            stream = new FileInputStream(fileName);
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "loadConfig: " + e);
+            return result;
+        }
+
         Properties properties = new Properties();
         try {
             properties.load(stream);
@@ -74,24 +79,31 @@ public class ConfigFile {
                 if (tmpStr != null && Long.parseLong(tmpStr) > 0)
                     longName = Integer.parseInt(tmpStr);
 
-                return 0;
+                result = 0;
             } else {
-                return 1;
+                result = 1;
+            }
+            try {
+                stream.close();
+            } catch (IOException e) {
+                Log.e(TAG, "loadConfig: " + e);
+                result = -1;
             }
         } catch (IOException e) {
             Log.e(TAG, "loadConfig: " + e);
-            return -1;
         }
+        return result;
     }
 
     //create configure file
-    private static boolean createConfig(Context context, String fileName) {
+    private static boolean createConfig(String fileName) {
         Log.i(TAG, "initConfig: create config file");
+
         boolean result = false;
         FileOutputStream stream;
         try {
-            stream = context.openFileOutput(fileName, Context.MODE_PRIVATE);
-        } catch (FileNotFoundException e) {
+            stream = new FileOutputStream(fileName);
+        } catch (Exception e) {
             Log.e(TAG, "createConfig: " + e);
             return false;
         }

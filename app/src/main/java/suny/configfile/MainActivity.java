@@ -1,7 +1,10 @@
 package suny.configfile;
 
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -12,6 +15,9 @@ public class MainActivity extends AppCompatActivity {
 
         if (ConfigFile.initConfig(this)) {
             ConfigFile.display();
+        }
+        if (ConfigFileSD.initConfig(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator)) {
+            ConfigFileSD.display();
         }
     }
 }
